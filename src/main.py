@@ -31,13 +31,48 @@ def sitemap():
     return generate_sitemap(app)
 
 @app.route('/user', methods=['GET'])
-def handle_hello():
+def get_users():
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+    users = User.query.all()
+    all_people = list(map(lambda x: x.serialize(), users))
 
-    return jsonify(response_body), 200
+    return jsonify(all_people), 200
+@app.route('/user', methods=['POST'])
+def create_users():
+    request_user=request.get_json()
+    user1 = User(email=request_user["email"], password=request_user["password"])
+    db.session.add(user1)
+    db.session.commit()
+
+    return jsonify("User: "+ user1.email+", created"), 200
+
+@app.route('/user/<int:user_id>', methods=['PUT'])
+def update_users(user_id):
+    request_user=request.get_json()
+    user1 = User.query.get(user_id)
+    if user1 is None:
+        raise APIException('User not found, bro', status_code=404)
+
+    if "email" in request_user:
+        user1.email = request_user["email"]
+    if "password" in request_user:
+        user1.password = request_user["password"]
+
+    db.session.commit()
+    return jsonify("User Updated"), 200
+
+@app.route('/user/<int:user_id>', methods=['DELETE'])
+def delete_users(user_id):
+    request_user=request.get_json()
+    user1 = User.query.get(user_id)
+    if user1 is None:
+        raise APIException('User not found, bro', status_code=404)
+    db.session.delete(user1)
+    db.session.commit()
+
+    db.session.commit()
+    return jsonify("User deleted"), 200
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
